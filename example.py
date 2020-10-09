@@ -26,7 +26,7 @@ def euclidean_distance(tensor_1, tensor_2):
         dist += (a - b)**2        
     return math.sqrt(dist)
 
-def normalise_image(img):
+def normalize_image(img):
     img = np.array(img)
     if img.shape[2] > 3:
         img = img[..., :3]    
@@ -40,9 +40,9 @@ cur = os.getcwd()  # Get current working directory
 mtcnn = MTCNN(image_size=160, margin=32, device='cuda')
 model = InceptionResnetV1(pretrained='casia-webface').eval()  # Pre-trained on CASIA dataset
 
-img_base = normalise_image(Image.open(cur + '/dataset/test_images/sample.jpg'))  # Image base for comparison (Kate Siegel)
-img1     = normalise_image(Image.open(cur + '/dataset/test_images/siegel.jpg'))  # Kate Siegel
-img2     = normalise_image(Image.open(cur + '/dataset/test_images/jolie.jpg'))   # Angelina Jolie
+img_base = normalize_image(Image.open(cur + '/dataset/test_images/sample.jpg'))  # Image base for comparison (Kate Siegel)
+img1     = normalize_image(Image.open(cur + '/dataset/test_images/siegel.jpg'))  # Kate Siegel
+img2     = normalize_image(Image.open(cur + '/dataset/test_images/jolie.jpg'))   # Angelina Jolie
 
 # Get cropped and prewhitened image tensor
 face_base = mtcnn(img_base, save_path=cur + '/dataset/saved_files/base.jpg')
