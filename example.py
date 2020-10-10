@@ -1,43 +1,17 @@
 # SAMPLE CODE
 # Euclidean distances using two people, one of them as base model.
+import os
 
 from facenet_pytorch import MTCNN, InceptionResnetV1
 from PIL import Image, ImageFile
-import numpy as np
-import os
-import math
+
+from threshold_calculus import euclidean_distance
+from image_handler import normalize_image
+
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
-def value(tensor_elem):
-    return tensor_elem.detach().numpy()
-
-
-def tensor_to_array(tensor):
-    arr = []
-    for t in tensor[0]:
-        arr.append(value(t))
-    return arr
-
-
-def euclidean_distance(tensor_1, tensor_2):
-    t1 = tensor_to_array(tensor_1)
-    t2 = tensor_to_array(tensor_2)
-    dist = 0.0
-    for a, b in zip(t1, t2):
-        dist += (a - b) ** 2
-    return math.sqrt(dist)
-
-
-def normalize_image(img):
-    img = np.array(img)
-    if img.shape[2] > 3:
-        img = img[..., :3]
-    return Image.fromarray(img, 'RGB')
-
-
-# TODO: Calcular threshold
 threshold = None
 
 cur = os.getcwd()  # Get current working directory

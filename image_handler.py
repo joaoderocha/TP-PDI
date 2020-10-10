@@ -1,13 +1,11 @@
 import os
-import re
-import sys
-from facenet_pytorch import MTCNN, InceptionResnetV1
+from facenet_pytorch import InceptionResnetV1
 from PIL import Image, ImageFile
 import numpy as np
-import math
+from torchvision.transforms import ToTensor
+
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
-mtcnn = MTCNN(image_size=160, margin=32, device='cuda', keep_all=True)
 model = InceptionResnetV1(pretrained='casia-webface').eval()  # Pre-trained on CASIA dataset
 
 
@@ -18,10 +16,16 @@ def normalize_image(img):
     return Image.fromarray(img, 'RGB')
 
 
-def getPessoas(path, regex='*'):
+def getFiles(path):
+    files = []
     for (dirpath, dirname, filenames) in os.walk(path):
         for file in filenames:
-            faces = mtcnn(normalize_image(Image.open(path+file)), save_path='cPessoas/rosto/{}'.format(file))
+            img = Image.open(dirpath + file)
+            tensor = ToTensor()(img).unsqueeze(0)
+            files.append({
+                'nome': file.split('.')[0],
+                'embedding': model(tensor),
+                'img': img,
+            })
 
-
-getPessoas('cPessoas/')
+    return files

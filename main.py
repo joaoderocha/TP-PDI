@@ -1,26 +1,35 @@
-from facenet_pytorch import MTCNN, InceptionResnetV1
-from PIL import Image, ImageFile
-#from matplotlib import pyplot as plt
-import os
+import time
+from facenet_pytorch import InceptionResnetV1
 
-ImageFile.LOAD_TRUNCATED_IMAGES = True
+from image_handler import getFiles
+from threshold_calculus import calculate
+from classifier import classify
 
-cur = os.getcwd()
 
-mtcnn = MTCNN(image_size=160, margin=25, device='cuda')
-model = InceptionResnetV1(pretrained='vggface2').eval()
-# model = InceptionResnetV1(pretrained='casia-webface').eval()
+def time_it_decorator(func, *args, **kwargs):
+    start = time.time()
+    function_return = func(*args, **kwargs)
+    end = time.time()
+    return function_return, end - start
 
-img = Image.open(cur + '/PDI/test_images/sample.jpg')
 
-# Get cropped and prewhitened image tensor
-face = mtcnn(img)#, save_path=cur + '/PDI/saved_files/sample3.jpg')
-#img_cropped.shape  # ([3, 160, 160])
+if __name__ == '__main__':
+    print('Calculando vetor de base...')
+    (vetor_base, tempo) = time_it_decorator(getFiles, 'database/base_images/')
+    print('levou: {} segundos'.format(tempo, 4))
 
-# Calculate embedding (unsqueeze to add batch dimension)
-# img_embedding = resnet(img_cropped.unsqueeze(0))
+    print('Calculando vetor de teste...')
+    (vetor_teste, tempo) = time_it_decorator(getFiles, 'database/test_images/')
+    print('levou: {} segundos'.format(tempo, 4))
 
-# Or, if using for VGGFace2 classification
-model.classify = True
-img_probs = model(face.unsqueeze(0))
-print(img_probs)  # Tensor com características da face
+    print('Recuperando modelo...')
+    (model, tempo) = time_it_decorator(InceptionResnetV1(pretrained='casia-webface').eval)
+    print('levou: {} segundos'.format(tempo, 4))
+
+    print('Calculando threshold...')
+    threshold = time_it_decorator(calculate, model, 'database/treshold/')  # 1.1139184950468057
+    print('levou: {} segundos'.format(tempo, 4))
+
+    print('Classificando alunos...')
+    (indefinido, tempo) = time_it_decorator(classify(vetor_base, vetor_teste, threshold))
+    print('levou: {} segundos'.format(tempo, 4))
