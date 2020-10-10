@@ -2,17 +2,17 @@
 # Similarity threshold calculation
 
 from facenet_pytorch import MTCNN, InceptionResnetV1
-from PIL import Image, ImageFile
 import numpy as np
 import os
 import math
 import sys
+from PIL import Image, ImageFile
+from torchvision.transforms import ToTensor
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 # Calcular threshold
 threshold = None
-PATH = '<Insert training dataset directory>'  # Terá que conter UMA imagem de cada aluno (imagens base do one-shot learning)
 
 
 def value(tensor_elem):
@@ -43,26 +43,39 @@ def normalize_image(img):
 
 
 # Faces com distância > threshold serão consideradas diferentes.
-def similarity_threshold(mtcnn, model, PATH):
+def similarity_threshold(model, PATH):
     minimum = sys.maxsize
     for img_base in os.listdir(PATH):
         for img_target in os.listdir(PATH):
             if img_target == img_base:
                 continue
-            base = mtcnn(normalize_image(Image.open(PATH + '/' + img_base)))
-            target = mtcnn(normalize_image(Image.open(PATH + '/' + img_target)))
-            base_emb = model(base.unsqueeze(0))
-            target_emb = model(target.unsqueeze(0))
+            base = Image.open(PATH + '/' + img_base)
+            target = Image.open(PATH + '/' + img_target)
+            base_emb = model(ToTensor()(base).unsqueeze(0))
+            target_emb = model(ToTensor()(target).unsqueeze(0))
             dist = euclidean_distance(base_emb, target_emb)
             minimum = min(minimum, dist)
     return minimum
 
 
-# cur = os.getcwd()  # Get current working directory
-
-mtcnn = MTCNN(image_size=160, margin=32, device='cuda')
-model = InceptionResnetV1(pretrained='casia-webface').eval()  # Pre-trained on CASIA dataset
-
-threshold = similarity_threshold(mtcnn, model, PATH)
-
-print('Threshold: ' + str(threshold))
+def similarity_threshold(model, path):
+    maximum = -1
+    for (dirpath, dirname, filenames) in os.walk(path):
+        if not filenames:
+            continue
+        count1 = 0
+        count2 = 0
+        for img_base in filenames:
+            count1 += 1
+            for img_target in filenames:
+                if img_target == img_base:
+                    continue
+                if count1 > count2:
+                    base = Image.open(dirpath + '/' + img_base)
+                    target = Image.open(dirpath + '/' + img_target)
+                    base_emb = model(ToTensor()(base).unsqueeze(0))
+                    target_emb = model(ToTensor()(target).unsqueeze(0))
+                    dist = euclidean_distance(base_emb, target_emb)
+                    maximum = max(maximum, dist)
+                    count2 += 1
+    return maximum

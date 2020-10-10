@@ -1,12 +1,12 @@
 import os
-import re
 import sys
 from facenet_pytorch import MTCNN, InceptionResnetV1
 from PIL import Image, ImageFile
 import numpy as np
 import math
 from torchvision.transforms import ToTensor
-from torch.autograd import Variable
+from example2 import similarity_threshold
+
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 mtcnn = MTCNN(image_size=160, device='cuda')
@@ -53,7 +53,6 @@ def getFiles(path, regex='*'):
             # print(file)
             img = Image.open(dirpath + file)
             tensor = ToTensor()(img).unsqueeze(0)
-            var = Variable(tensor)
             files.append({
                 'nome': file.split('.')[0],
                 'embedding': model(tensor),
@@ -61,13 +60,16 @@ def getFiles(path, regex='*'):
             })
 
     return files
+
+
 print('fazendo vetor base')
 vetorBase = getFiles('database/base_images/')
 print('fazendo vetor teste')
 vetorTeste = getFiles('database/test_images/')
-threshold = 10
+threshold = similarity_threshold(model, 'database/treshold/') #1.1139184950468057
+print('threshold', threshold)
 matrizConfusao = np.zeros((len(vetorBase), len(vetorBase)))
-print('renomeando indiano')
+print('renomeando indiano', len(vetorBase), len(vetorTeste))
 cont = 0
 for (i, fileI) in enumerate(vetorTeste): # vetor base => one shot
     min = sys.maxsize
@@ -77,13 +79,13 @@ for (i, fileI) in enumerate(vetorTeste): # vetor base => one shot
         euclDist = euclidean_distance(fileI['embedding'], fileJ['embedding'])
         if euclDist < min:
             min = euclDist
-            # menorJ = int((fileJ['nome'].split('_')))
             valorJ = int(fileJ['nome'])
     if min > threshold:
+        fileI['img'].save('cPessoas/test2/NINGUEM_{}.jpg'.format(cont))
+        cont+=1
         continue
-    # matrizConfusao[valorI][menorJ] += 1
-    fileI['img'].save('cPessoas/teste2/{}_{}.jpg'.format(valorJ, cont))
-    # os.remove(fileI['img'].filename)
+
+    fileI['img'].save('cPessoas/test2/{}_{}.jpg'.format(valorJ, cont))
     cont+=1
 
 
